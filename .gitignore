@@ -1,0 +1,13 @@
+# Environment variables - contains secrets
+.env
+
+# SQLite database - contains patient data
+*.db
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Mac system files
+.DS_Store
