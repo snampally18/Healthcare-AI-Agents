@@ -207,6 +207,7 @@ STAFF_PANEL = """
                     <th>Patient</th>
                     <th>Doctor</th>
                     <th>Appt</th>
+                    <th>Wait Time</th>
                     <th>Assign Room</th>
                 </tr>
                 {% for p in waiting %}
@@ -214,6 +215,19 @@ STAFF_PANEL = """
                     <td><b>{{ p.first_name }} {{ p.last_name }}</b></td>
                     <td>{{ p.doctor_name }}</td>
                     <td>{{ p.appointment_time }}</td>
+                    <td>
+                        {% if p.wait_minutes is not none %}
+                            {% if p.wait_minutes >= 20 %}
+                                <span class="badge badge-occupied">⚠️ {{ p.wait_minutes }}m</span>
+                            {% elif p.wait_minutes >= 10 %}
+                                <span class="badge" style="background:#fff7ed; color:#c2410c;">{{ p.wait_minutes }}m</span>
+                            {% else %}
+                                <span class="badge badge-available">{{ p.wait_minutes }}m</span>
+                            {% endif %}
+                        {% else %}
+                            <span style="color:#94a3b8;">—</span>
+                        {% endif %}
+                    </td>
                     <td>
                         <select id="room_{{ p.id }}">
                             {% for r in available_rooms %}
@@ -378,11 +392,23 @@ DISPLAY_PAGE = """
 
 from flask import render_template_string as rts
 
+def compute_wait_minutes(checked_in_at):
+    if not checked_in_at:
+        return None
+    try:
+        ci = datetime.strptime(checked_in_at, "%Y-%m-%d %H:%M:%S")
+        delta = datetime.now() - ci
+        return int(delta.total_seconds() // 60)
+    except Exception:
+        return None
+
 @app.route('/nurse')
 def nurse_panel():
     waiting = get_waiting_patients()
     rooms = get_rooms()
     available_rooms = [r for r in rooms if r['status'] == 'available']
+    for p in waiting:
+        p['wait_minutes'] = compute_wait_minutes(p.get('checked_in_at'))
     return rts(STAFF_PANEL,
                waiting=waiting,
                waiting_count=len(waiting),

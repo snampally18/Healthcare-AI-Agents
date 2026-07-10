@@ -409,7 +409,302 @@ async function confirmDone() {
 </html>
 """
 
+DASHBOARD_TEMPLATE = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Center Dashboard</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0f2744; min-height: 100vh; padding: 30px; }
+
+        .header { text-align: center; color: white; margin-bottom: 36px; }
+        .header h1 { font-size: 28px; font-weight: 700; letter-spacing: 1px; }
+        .header p { font-size: 14px; color: #93c5fd; margin-top: 6px; }
+
+        /* Role selector */
+        .role-screen { max-width: 700px; margin: 0 auto; }
+        .role-title { text-align: center; color: white; font-size: 18px; font-weight: 600; margin-bottom: 24px; }
+        .role-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+        .role-card {
+            background: #1e3a5f; border-radius: 14px; padding: 28px 16px;
+            text-align: center; cursor: pointer; border: 2px solid #2c4a6e;
+            transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+        }
+        .role-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+        .role-card.front-desk:hover { border-color: #2c7bb6; }
+        .role-card.nurse:hover      { border-color: #27ae60; }
+        .role-card.doctor:hover     { border-color: #e67e22; }
+        .role-icon { font-size: 40px; margin-bottom: 12px; }
+        .role-name { font-size: 15px; font-weight: 700; color: white; margin-bottom: 6px; }
+        .role-desc { font-size: 11px; color: #64748b; line-height: 1.5; }
+
+        /* Dashboard */
+        .dashboard { display: none; }
+        .role-badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: #1e3a5f; border: 1px solid #2c4a6e;
+            border-radius: 20px; padding: 6px 16px;
+            color: white; font-size: 13px; font-weight: 600;
+            cursor: pointer; margin-bottom: 24px;
+        }
+        .role-badge:hover { border-color: #2c7bb6; }
+
+        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; max-width: 900px; margin: 0 auto 20px; }
+        .grid-1 { grid-template-columns: 1fr; }
+
+        .card {
+            background: #1e3a5f; border-radius: 16px; padding: 24px 26px;
+            border: 1.5px solid #2c4a6e; cursor: pointer;
+            transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+            text-decoration: none; display: block;
+        }
+        .card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+        .card-1:hover { border-color: #2c7bb6; }
+        .card-2:hover { border-color: #27ae60; }
+        .card-3:hover { border-color: #e67e22; }
+        .card-4:hover { border-color: #7e22ce; }
+
+        .card-icon  { font-size: 36px; margin-bottom: 12px; }
+        .card-title { font-size: 17px; font-weight: 700; color: white; margin-bottom: 6px; }
+        .card-desc  { font-size: 12px; color: #64748b; margin-bottom: 16px; line-height: 1.5; }
+        .card-link  { font-size: 13px; font-weight: 600; color: #93c5fd; }
+
+        .stats { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+        .stat { border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 600; }
+        .stat-blue   { background: #1e3a8a; color: #93c5fd; }
+        .stat-green  { background: #14532d; color: #86efac; }
+        .stat-orange { background: #7c2d12; color: #fdba74; }
+        .stat-purple { background: #4c1d95; color: #c4b5fd; }
+        .stat-gray   { background: #1e293b; color: #94a3b8; }
+        .stat-red    { background: #7f1d1d; color: #fca5a5; }
+
+        .bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 900px; margin: 0 auto; }
+        .card-sm {
+            background: #1e3a5f; border-radius: 14px; padding: 18px 22px;
+            border: 1.5px solid #2c4a6e; text-decoration: none; display: block;
+            transition: transform 0.15s, border-color 0.15s;
+        }
+        .card-sm:hover { transform: translateY(-3px); border-color: #2c7bb6; }
+        .card-sm-title { font-size: 14px; font-weight: 700; color: white; margin-bottom: 4px; }
+        .card-sm-desc  { font-size: 12px; color: #64748b; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏥 Medical Center</h1>
+        <p>Staff Portal</p>
+    </div>
+
+    <!-- Role Selector Screen -->
+    <div class="role-screen" id="roleScreen">
+        <p class="role-title">Who are you? Select your role to continue</p>
+        <div class="role-grid">
+            <div class="role-card front-desk" onclick="selectRole('frontdesk')">
+                <div class="role-icon">🏥</div>
+                <div class="role-name">Front Desk</div>
+                <div class="role-desc">Patient check-in, records, all agents</div>
+            </div>
+            <div class="role-card nurse" onclick="selectRole('nurse')">
+                <div class="role-icon">👩‍⚕️</div>
+                <div class="role-name">Nurse</div>
+                <div class="role-desc">Room assignment and waiting room display</div>
+            </div>
+            <div class="role-card doctor" onclick="selectRole('doctor')">
+                <div class="role-icon">🩺</div>
+                <div class="role-name">Doctor</div>
+                <div class="role-desc">Clinical notes and after visit summary</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Screen -->
+    <div class="dashboard" id="dashboardScreen">
+        <div style="max-width:900px; margin: 0 auto 20px; display:flex; justify-content:space-between; align-items:center;">
+            <span class="role-badge" onclick="switchRole()">← Switch Role</span>
+            <span id="roleName" style="color:#93c5fd; font-size:13px; font-weight:600;"></span>
+        </div>
+
+        <!-- Front Desk Cards -->
+        <div id="frontdeskDash">
+            <div class="grid" style="max-width:900px; margin: 0 auto 20px;">
+                <a class="card card-1" href="/checkin">
+                    <div class="card-icon">🏥</div>
+                    <div class="card-title">Patient Check-In</div>
+                    <div class="card-desc">Collect patient info, insurance details and appointment data</div>
+                    <div class="stats">
+                        <span class="stat stat-blue">{{ total_today }} checked in today</span>
+                        <span class="stat stat-green">{{ waiting }} waiting</span>
+                    </div>
+                    <div class="card-link">Open Check-In →</div>
+                </a>
+                <a class="card card-2" href="http://localhost:5001/nurse" target="_blank">
+                    <div class="card-icon">👩‍⚕️</div>
+                    <div class="card-title">Nurse Room Assignment</div>
+                    <div class="card-desc">Assign exam rooms to waiting patients, manage room status</div>
+                    <div class="stats">
+                        <span class="stat stat-orange">{{ waiting }} waiting</span>
+                        <span class="stat stat-red">{{ occupied }} occupied</span>
+                        <span class="stat stat-green">{{ available }} available</span>
+                    </div>
+                    <div class="card-link">Open Nurse Panel →</div>
+                </a>
+                <a class="card card-3" href="http://localhost:5002/doctor" target="_blank">
+                    <div class="card-icon">🩺</div>
+                    <div class="card-title">Doctor Clinical Notes</div>
+                    <div class="card-desc">Type rough notes — Claude generates structured clinical documentation</div>
+                    <div class="stats">
+                        <span class="stat stat-orange">{{ in_room }} in room</span>
+                        <span class="stat stat-green">{{ visit_done }} completed today</span>
+                    </div>
+                    <div class="card-link">Open Doctor Notes →</div>
+                </a>
+                <a class="card card-4" href="http://localhost:5003/summary" target="_blank">
+                    <div class="card-icon">📋</div>
+                    <div class="card-title">After Visit Summary</div>
+                    <div class="card-desc">Generate patient-friendly summaries — send via email or print</div>
+                    <div class="stats">
+                        <span class="stat stat-purple">{{ pending_summary }} pending</span>
+                        <span class="stat stat-gray">{{ summary_sent }} sent today</span>
+                    </div>
+                    <div class="card-link">Open Summary →</div>
+                </a>
+            </div>
+            <div class="bottom-grid">
+                <a class="card-sm" href="http://localhost:5001/display" target="_blank">
+                    <div class="card-sm-title">📺 Waiting Room Display</div>
+                    <div class="card-sm-desc">Live screen showing patient names and assigned rooms</div>
+                </a>
+                <a class="card-sm" href="/records" target="_blank">
+                    <div class="card-sm-title">🗄 All Patient Records</div>
+                    <div class="card-sm-desc">View all check-in records and visit history</div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Nurse Cards -->
+        <div id="nurseDash" style="display:none;">
+            <div class="grid" style="max-width:900px; margin: 0 auto 20px;">
+                <a class="card card-2" href="http://localhost:5001/nurse" target="_blank">
+                    <div class="card-icon">👩‍⚕️</div>
+                    <div class="card-title">Nurse Room Assignment</div>
+                    <div class="card-desc">Assign exam rooms to waiting patients, manage room status</div>
+                    <div class="stats">
+                        <span class="stat stat-orange">{{ waiting }} patients waiting</span>
+                        <span class="stat stat-red">{{ occupied }} rooms occupied</span>
+                        <span class="stat stat-green">{{ available }} rooms available</span>
+                    </div>
+                    <div class="card-link">Open Nurse Panel →</div>
+                </a>
+                <a class="card-sm" href="http://localhost:5001/display" target="_blank" style="border-radius:16px; padding:24px 26px;">
+                    <div class="card-icon">📺</div>
+                    <div class="card-title" style="font-size:17px; font-weight:700; color:white; margin-bottom:6px;">Waiting Room Display</div>
+                    <div class="card-desc" style="font-size:12px; color:#64748b; margin-bottom:16px;">Live screen showing patient names and assigned rooms</div>
+                    <div class="card-link">Open Display →</div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Doctor Cards -->
+        <div id="doctorDash" style="display:none;">
+            <div class="grid" style="max-width:900px; margin: 0 auto 20px;">
+                <a class="card card-3" href="http://localhost:5002/doctor" target="_blank">
+                    <div class="card-icon">🩺</div>
+                    <div class="card-title">Doctor Clinical Notes</div>
+                    <div class="card-desc">Type rough notes — Claude generates structured clinical documentation and After Visit Summary</div>
+                    <div class="stats">
+                        <span class="stat stat-orange">{{ in_room }} patient(s) in room</span>
+                        <span class="stat stat-green">{{ visit_done }} visit(s) completed</span>
+                    </div>
+                    <div class="card-link">Open Doctor Notes →</div>
+                </a>
+                <a class="card card-4" href="http://localhost:5003/summary" target="_blank">
+                    <div class="card-icon">📋</div>
+                    <div class="card-title">After Visit Summary</div>
+                    <div class="card-desc">Generate patient-friendly summaries and send via email or print</div>
+                    <div class="stats">
+                        <span class="stat stat-purple">{{ pending_summary }} pending</span>
+                        <span class="stat stat-gray">{{ summary_sent }} sent today</span>
+                    </div>
+                    <div class="card-link">Open Summary →</div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+<script>
+function selectRole(role) {
+    document.getElementById('roleScreen').style.display = 'none';
+    document.getElementById('dashboardScreen').style.display = 'block';
+
+    document.getElementById('frontdeskDash').style.display = 'none';
+    document.getElementById('nurseDash').style.display = 'none';
+    document.getElementById('doctorDash').style.display = 'none';
+
+    const labels = { frontdesk: '🏥 Front Desk', nurse: '👩‍⚕️ Nurse', doctor: '🩺 Doctor' };
+    document.getElementById('roleName').textContent = labels[role];
+
+    if (role === 'frontdesk') document.getElementById('frontdeskDash').style.display = 'block';
+    if (role === 'nurse')     document.getElementById('nurseDash').style.display = 'block';
+    if (role === 'doctor')    document.getElementById('doctorDash').style.display = 'block';
+
+    localStorage.setItem('clinicRole', role);
+}
+
+function switchRole() {
+    localStorage.removeItem('clinicRole');
+    document.getElementById('roleScreen').style.display = 'block';
+    document.getElementById('dashboardScreen').style.display = 'none';
+}
+
+// Remember role on refresh
+const saved = localStorage.getItem('clinicRole');
+if (saved) selectRole(saved);
+</script>
+</body>
+</html>
+"""
+
 @app.route('/')
+def dashboard():
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        today = datetime.now().strftime("%Y-%m-%d")
+
+        total_today = conn.execute(
+            "SELECT COUNT(*) FROM checkins WHERE checked_in_at LIKE ?", (f"{today}%",)
+        ).fetchone()[0]
+        waiting = conn.execute(
+            "SELECT COUNT(*) FROM checkins WHERE room_status='waiting'"
+        ).fetchone()[0]
+        in_room = conn.execute(
+            "SELECT COUNT(*) FROM checkins WHERE room_status='in_room'"
+        ).fetchone()[0]
+        visit_done = conn.execute(
+            "SELECT COUNT(*) FROM checkins WHERE room_status='visit_done' AND checked_in_at LIKE ?", (f"{today}%",)
+        ).fetchone()[0]
+        pending_summary = conn.execute(
+            "SELECT COUNT(*) FROM checkins WHERE room_status='visit_done' AND after_visit_summary IS NULL"
+        ).fetchone()[0]
+        summary_sent = conn.execute(
+            "SELECT COUNT(*) FROM checkins WHERE summary_sent_at LIKE ?", (f"{today}%",)
+        ).fetchone()[0]
+        try:
+            occupied = conn.execute("SELECT COUNT(*) FROM rooms WHERE status='occupied'").fetchone()[0]
+            available = conn.execute("SELECT COUNT(*) FROM rooms WHERE status='available'").fetchone()[0]
+        except Exception:
+            occupied = 0
+            available = 5
+
+    return render_template_string(DASHBOARD_TEMPLATE,
+        total_today=total_today, waiting=waiting, in_room=in_room,
+        visit_done=visit_done, pending_summary=pending_summary,
+        summary_sent=summary_sent, occupied=occupied, available=available
+    )
+
+@app.route('/checkin')
 def index():
     return render_template_string(HTML_TEMPLATE)
 
@@ -472,83 +767,324 @@ def done():
 
 @app.route('/records', methods=['GET'])
 def records():
+    search = request.args.get('q', '').strip()
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
-        rows = conn.execute("SELECT * FROM checkins ORDER BY checked_in_at DESC").fetchall()
+        if search:
+            rows = conn.execute("""
+                SELECT * FROM checkins
+                WHERE first_name LIKE ? OR last_name LIKE ?
+                OR doctor_name LIKE ? OR phone_number LIKE ?
+                OR date_of_birth LIKE ?
+                ORDER BY checked_in_at DESC
+            """, (f'%{search}%', f'%{search}%', f'%{search}%',
+                  f'%{search}%', f'%{search}%')).fetchall()
+        else:
+            rows = conn.execute("SELECT * FROM checkins ORDER BY checked_in_at DESC").fetchall()
     data = [dict(r) for r in rows]
 
-    html = """
+    status_colors = {
+        'waiting':    ('background:#fff7ed; color:#c2410c;', 'Waiting'),
+        'in_room':    ('background:#f0fdf4; color:#15803d;', 'In Room'),
+        'visit_done': ('background:#eff6ff; color:#1d4ed8;', 'Visit Done'),
+        'completed':  ('background:#f8fafc; color:#64748b;', 'Completed'),
+    }
+
+    html = f"""
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Check-In Records</title>
+    <title>Patient Records</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; padding: 30px; }
-        .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
-        h1 { font-size: 20px; color: #1a3a4a; }
-        .count { background: #2c7bb6; color: white; border-radius: 20px; padding: 4px 14px; font-size: 13px; font-weight: 600; }
-        .back { text-decoration: none; color: #2c7bb6; font-size: 13px; font-weight: 600; }
-        table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.07); }
-        thead { background: #2c7bb6; color: white; }
-        th { padding: 12px 14px; text-align: left; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-        td { padding: 11px 14px; font-size: 13px; color: #374151; border-bottom: 1px solid #f1f5f9; }
-        tr:last-child td { border-bottom: none; }
-        tr:hover td { background: #f8fbfe; }
-        .empty { text-align: center; padding: 40px; color: #94a3b8; font-size: 15px; }
-        .badge { background: #e8f4f8; color: #2c7bb6; border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+        * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+        body {{ font-family: 'Segoe UI', sans-serif; background: #f0f4f8; padding: 30px; }}
+        .header {{ display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }}
+        h1 {{ font-size: 20px; color: #1a3a4a; }}
+        .nav {{ display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }}
+        .count {{ background: #2c7bb6; color: white; border-radius: 20px; padding: 4px 14px; font-size: 13px; font-weight: 600; }}
+        .back {{ text-decoration: none; color: #2c7bb6; font-size: 13px; font-weight: 600; }}
+        .report-link {{ text-decoration: none; background: #27ae60; color: white; border-radius: 8px; padding: 7px 16px; font-size: 13px; font-weight: 600; }}
+
+        .search-bar {{ display: flex; gap: 10px; margin-bottom: 20px; }}
+        .search-bar input {{
+            flex: 1; border: 1.5px solid #c8dde9; border-radius: 9px;
+            padding: 10px 16px; font-size: 14px; outline: none; font-family: inherit;
+        }}
+        .search-bar input:focus {{ border-color: #2c7bb6; }}
+        .search-bar button {{
+            background: #2c7bb6; color: white; border: none; border-radius: 9px;
+            padding: 10px 22px; font-size: 14px; font-weight: 600; cursor: pointer;
+        }}
+        .search-bar .clear {{ background: #f1f5f9; color: #64748b; }}
+
+        table {{ width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.07); }}
+        thead {{ background: #2c7bb6; color: white; }}
+        th {{ padding: 12px 14px; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }}
+        td {{ padding: 11px 14px; font-size: 13px; color: #374151; border-bottom: 1px solid #f1f5f9; }}
+        tr:last-child td {{ border-bottom: none; }}
+        tr:hover td {{ background: #f8fbfe; }}
+        .empty {{ text-align: center; padding: 40px; color: #94a3b8; font-size: 15px; }}
+        .badge {{ background: #e8f4f8; color: #2c7bb6; border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 600; }}
+        .status {{ border-radius: 6px; padding: 3px 10px; font-size: 11px; font-weight: 600; }}
+        .highlight {{ background: #fef9c3; }}
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>🗄 Patient Check-In Records</h1>
-        <div style="display:flex; gap:14px; align-items:center;">
-            <span class="count">""" + str(len(data)) + """ record(s)</span>
-            <a class="back" href="/">← Back to Check-In</a>
+        <h1>🗄 Patient Records</h1>
+        <div class="nav">
+            <span class="count">{len(data)} record(s)</span>
+            <a class="report-link" href="/daily-report">📊 Daily Report</a>
+            <a class="back" href="/">← Dashboard</a>
         </div>
     </div>
+
+    <form class="search-bar" method="GET" action="/records">
+        <input type="text" name="q" value="{search}" placeholder="Search by name, doctor, phone, or date of birth...">
+        <button type="submit">🔍 Search</button>
+        {"<a href='/records' class='search-bar'><button type='button' class='clear'>✕ Clear</button></a>" if search else ""}
+    </form>
 """
     if not data:
-        html += '<table><tr><td class="empty">No check-in records yet. Complete a check-in to see records here.</td></tr></table>'
+        html += f'<table><tr><td class="empty">{"No records match your search." if search else "No check-in records yet."}</td></tr></table>'
     else:
         html += """
     <table>
         <thead>
             <tr>
                 <th>#</th>
-                <th>First Name</th>
-                <th>Last Name</th>
-                <th>Date of Birth</th>
+                <th>Name</th>
+                <th>DOB</th>
                 <th>Phone</th>
-                <th>Insurance Provider</th>
-                <th>Member ID</th>
-                <th>Group No.</th>
                 <th>Doctor</th>
-                <th>Appt Time</th>
-                <th>Checked In At</th>
+                <th>Appt</th>
+                <th>Insurance</th>
+                <th>Status</th>
+                <th>Room</th>
+                <th>Checked In</th>
             </tr>
         </thead>
         <tbody>
 """
         for r in data:
+            status = r.get('room_status') or 'waiting'
+            style, label = status_colors.get(status, ('', status))
+            row_class = 'highlight' if search and (
+                search.lower() in (r['first_name'] or '').lower() or
+                search.lower() in (r['last_name'] or '').lower()
+            ) else ''
             html += f"""
-            <tr>
+            <tr class="{row_class}">
                 <td><span class="badge">{r['id']}</span></td>
-                <td>{r['first_name'] or '-'}</td>
-                <td>{r['last_name'] or '-'}</td>
+                <td><b>{r['first_name'] or ''} {r['last_name'] or ''}</b></td>
                 <td>{r['date_of_birth'] or '-'}</td>
                 <td>{r['phone_number'] or '-'}</td>
-                <td>{r['insurance_provider'] or '-'}</td>
-                <td>{r['member_id'] or '-'}</td>
-                <td>{r['group_number'] or '-'}</td>
                 <td>{r['doctor_name'] or '-'}</td>
                 <td>{r['appointment_time'] or '-'}</td>
+                <td>{r['insurance_provider'] or '-'}</td>
+                <td><span class="status" style="{style}">{label}</span></td>
+                <td>{f"Room {r['room_number']}" if r.get('room_number') else '-'}</td>
                 <td>{r['checked_in_at'] or '-'}</td>
             </tr>"""
         html += "</tbody></table>"
 
     html += "</body></html>"
+    return html
+
+@app.route('/daily-report')
+def daily_report():
+    today = datetime.now().strftime("%Y-%m-%d")
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+
+        total = conn.execute(
+            "SELECT COUNT(*) FROM checkins WHERE checked_in_at LIKE ?", (f"{today}%",)
+        ).fetchone()[0]
+
+        waiting = conn.execute(
+            "SELECT COUNT(*) FROM checkins WHERE room_status='waiting'"
+        ).fetchone()[0]
+
+        in_room = conn.execute(
+            "SELECT COUNT(*) FROM checkins WHERE room_status='in_room'"
+        ).fetchone()[0]
+
+        completed = conn.execute(
+            "SELECT COUNT(*) FROM checkins WHERE room_status IN ('visit_done','completed') AND checked_in_at LIKE ?",
+            (f"{today}%",)
+        ).fetchone()[0]
+
+        summaries_sent = conn.execute(
+            "SELECT COUNT(*) FROM checkins WHERE summary_sent_at LIKE ?", (f"{today}%",)
+        ).fetchone()[0]
+
+        by_doctor = conn.execute("""
+            SELECT doctor_name, COUNT(*) as count
+            FROM checkins WHERE checked_in_at LIKE ?
+            GROUP BY doctor_name ORDER BY count DESC
+        """, (f"{today}%",)).fetchall()
+
+        patients = conn.execute("""
+            SELECT first_name, last_name, appointment_time, room_status,
+                   checked_in_at, room_number, doctor_name
+            FROM checkins WHERE checked_in_at LIKE ?
+            ORDER BY checked_in_at ASC
+        """, (f"{today}%",)).fetchall()
+
+        # Average wait time (checked_in_at to visit_completed_at)
+        wait_rows = conn.execute("""
+            SELECT checked_in_at, visit_completed_at FROM checkins
+            WHERE checked_in_at LIKE ? AND visit_completed_at IS NOT NULL
+        """, (f"{today}%",)).fetchall()
+
+        avg_wait = 0
+        if wait_rows:
+            total_mins = 0
+            count = 0
+            for row in wait_rows:
+                try:
+                    ci = datetime.strptime(row['checked_in_at'], "%Y-%m-%d %H:%M:%S")
+                    vc = datetime.strptime(row['visit_completed_at'], "%Y-%m-%d %H:%M:%S")
+                    total_mins += (vc - ci).seconds // 60
+                    count += 1
+                except Exception:
+                    pass
+            if count:
+                avg_wait = total_mins // count
+
+    status_colors = {
+        'waiting':    '#fff7ed; color:#c2410c',
+        'in_room':    '#f0fdf4; color:#15803d',
+        'visit_done': '#eff6ff; color:#1d4ed8',
+        'completed':  '#f8fafc; color:#64748b',
+    }
+
+    html = f"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Daily Report</title>
+    <style>
+        * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+        body {{ font-family: 'Segoe UI', sans-serif; background: #f0f4f8; padding: 30px; }}
+        .header {{ display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }}
+        h1 {{ font-size: 20px; color: #1a3a4a; }}
+        .back {{ text-decoration: none; color: #2c7bb6; font-size: 13px; font-weight: 600; }}
+        .date {{ font-size: 13px; color: #64748b; margin-top: 4px; }}
+
+        .stats-grid {{ display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 28px; }}
+        .stat-card {{ background: white; border-radius: 12px; padding: 20px; text-align: center; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }}
+        .stat-num {{ font-size: 36px; font-weight: 700; margin-bottom: 6px; }}
+        .stat-label {{ font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }}
+        .blue {{ color: #2c7bb6; }}
+        .green {{ color: #27ae60; }}
+        .orange {{ color: #e67e22; }}
+        .purple {{ color: #7e22ce; }}
+        .teal {{ color: #0891b2; }}
+
+        .section {{ background: white; border-radius: 12px; padding: 20px 24px; margin-bottom: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }}
+        .section h2 {{ font-size: 13px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; }}
+
+        .doctor-row {{ display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }}
+        .doctor-name {{ font-size: 14px; font-weight: 600; color: #1a3a4a; width: 160px; }}
+        .bar-wrap {{ flex: 1; background: #f1f5f9; border-radius: 20px; height: 10px; }}
+        .bar {{ background: #2c7bb6; border-radius: 20px; height: 10px; }}
+        .bar-count {{ font-size: 13px; font-weight: 700; color: #2c7bb6; width: 30px; text-align: right; }}
+
+        table {{ width: 100%; border-collapse: collapse; }}
+        th {{ font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; padding: 8px 10px; text-align: left; border-bottom: 2px solid #f1f5f9; }}
+        td {{ font-size: 13px; color: #374151; padding: 10px; border-bottom: 1px solid #f8fafc; }}
+        tr:last-child td {{ border-bottom: none; }}
+        .status {{ border-radius: 6px; padding: 3px 10px; font-size: 11px; font-weight: 600; }}
+        .empty {{ color: #94a3b8; text-align: center; padding: 20px; font-size: 13px; }}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <h1>📊 Daily Summary Report</h1>
+            <p class="date">{datetime.now().strftime('%A, %B %d, %Y')}</p>
+        </div>
+        <div style="display:flex; gap:12px;">
+            <a class="back" href="/records">🗄 All Records</a>
+            <a class="back" href="/">← Dashboard</a>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-num blue">{total}</div>
+            <div class="stat-label">Total Patients</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-num orange">{waiting}</div>
+            <div class="stat-label">Still Waiting</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-num teal">{in_room}</div>
+            <div class="stat-label">In Room Now</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-num green">{completed}</div>
+            <div class="stat-label">Visits Done</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-num purple">{summaries_sent}</div>
+            <div class="stat-label">Summaries Sent</div>
+        </div>
+    </div>
+
+    <!-- Avg Wait Time -->
+    <div class="section">
+        <h2>⏱ Average Visit Duration</h2>
+        <p style="font-size:28px; font-weight:700; color:#1a3a4a;">
+            {avg_wait} mins
+            <span style="font-size:13px; color:#64748b; font-weight:400;">
+                {"(based on completed visits)" if avg_wait > 0 else "(no completed visits yet today)"}
+            </span>
+        </p>
+    </div>
+
+    <!-- By Doctor -->
+    <div class="section">
+        <h2>🩺 Patients by Doctor</h2>
+        {"".join([f'''
+        <div class="doctor-row">
+            <div class="doctor-name">{r["doctor_name"] or "Unknown"}</div>
+            <div class="bar-wrap"><div class="bar" style="width:{min(100, r["count"] * 20)}%"></div></div>
+            <div class="bar-count">{r["count"]}</div>
+        </div>''' for r in by_doctor]) if by_doctor else '<p class="empty">No patients today</p>'}
+    </div>
+
+    <!-- Patient List -->
+    <div class="section">
+        <h2>👥 Today's Patients</h2>
+        {"<p class='empty'>No patients checked in today yet.</p>" if not patients else f'''
+        <table>
+            <tr>
+                <th>Name</th>
+                <th>Doctor</th>
+                <th>Appt Time</th>
+                <th>Room</th>
+                <th>Status</th>
+                <th>Checked In</th>
+            </tr>
+            {"".join([f"""
+            <tr>
+                <td><b>{p["first_name"]} {p["last_name"]}</b></td>
+                <td>{p["doctor_name"] or "-"}</td>
+                <td>{p["appointment_time"] or "-"}</td>
+                <td>{f"Room {p['room_number']}" if p["room_number"] else "-"}</td>
+                <td><span class="status" style="background:{status_colors.get(p["room_status"], "#f1f5f9; color:#64748b")}">{p["room_status"].replace("_"," ").title() if p["room_status"] else "-"}</span></td>
+                <td>{p["checked_in_at"] or "-"}</td>
+            </tr>""" for p in patients])}
+        </table>'''}
+    </div>
+</body>
+</html>"""
     return html
 
 if __name__ == '__main__':
