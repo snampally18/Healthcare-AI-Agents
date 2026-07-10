@@ -127,18 +127,21 @@ def assign_room(patient_id, room_number):
 
 def release_room(room_number):
     with sqlite3.connect(DB_PATH) as conn:
-        patient = conn.execute(
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        patient = cursor.execute(
             "SELECT patient_id FROM rooms WHERE room_number=?", (room_number,)
         ).fetchone()
-        if patient and patient['patient_id']:
-            conn.execute(
+        if patient and patient[0]:
+            cursor.execute(
                 "UPDATE checkins SET room_status='completed' WHERE id=?",
-                (patient['patient_id'],)
+                (patient[0],)
             )
-        conn.execute("""
+        cursor.execute("""
             UPDATE rooms SET status='available', patient_id=NULL, patient_name=NULL, assigned_at=NULL
             WHERE room_number=?
         """, (room_number,))
+        conn.commit()
 
 # ── HTML TEMPLATES ────────────────────────────────────────────
 

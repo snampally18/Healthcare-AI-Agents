@@ -162,6 +162,16 @@ DOCTOR_PANEL = """
 
         .success-msg { background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 12px 16px; color: #15803d; font-size: 13px; font-weight: 600; display: none; margin-top: 14px; }
         .placeholder-msg { color: #94a3b8; font-size: 14px; text-align: center; padding: 60px 20px; }
+        .btn-summary { background: linear-gradient(135deg, #7e22ce, #6b21a8); color: white; }
+        .btn-email   { background: linear-gradient(135deg, #2c7bb6, #1a5276); color: white; }
+        .btn-print   { background: linear-gradient(135deg, #27ae60, #1e8449); color: white; }
+        @media print {
+            .nav, .patient-list, .btn-row, h1, .subtitle, .patient-header, textarea, label, .hint { display: none !important; }
+            body { background: white; padding: 0; }
+            .grid { display: block; }
+            .notes-area { box-shadow: none; }
+            #summaryBox { display: block !important; border: none; background: white; }
+        }
     </style>
 </head>
 <body>
@@ -220,7 +230,26 @@ DOCTOR_PANEL = """
                 </div>
 
                 <button class="btn btn-save" id="saveBtn" onclick="saveNotes()">💾 Save & Complete Visit</button>
-                <div class="success-msg" id="successMsg">✅ Visit notes saved! Ready for After Visit Summary (Agent 4).</div>
+
+                <!-- After Visit Summary Section -->
+                <div id="summarySection" style="display:none; margin-top:20px; border-top: 2px solid #e0eef5; padding-top:20px;">
+                    <label>After Visit Summary</label>
+                    <div class="btn-row">
+                        <button class="btn btn-summary" id="summaryBtn" onclick="generateSummary()">📋 Generate After Visit Summary</button>
+                    </div>
+                    <div class="structured-box" id="summaryBox" style="display:none;">
+                        <h4>After Visit Summary</h4>
+                        <div id="summaryContent"></div>
+                    </div>
+                    <div class="btn-row" id="sendBtnRow" style="display:none;">
+                        <button class="btn btn-email" id="emailBtn" onclick="sendEmail()">📧 Send to Patient Email</button>
+                        <button class="btn btn-print" onclick="window.print()">🖨️ Print Summary</button>
+                    </div>
+                    <div class="success-msg" id="emailSuccess" style="display:none;">✅ After Visit Summary sent to patient's email!</div>
+                    <div class="success-msg" id="noEmailMsg" style="display:none; background:#fff7ed; border-color:#fdba74; color:#c2410c;">⚠️ No email on file — please print the summary for the patient.</div>
+                </div>
+
+                <div class="success-msg" id="successMsg">✅ Visit notes saved!</div>
             </div>
         </div>
     </div>
@@ -287,6 +316,57 @@ async function saveNotes() {
         document.getElementById('saveBtn').style.display = 'none';
         document.getElementById('successMsg').style.display = 'block';
         document.getElementById('roughNotes').disabled = true;
+        document.getElementById('summarySection').style.display = 'block';
+    }
+}
+
+let summaryText = '';
+
+async function generateSummary() {
+    const btn = document.getElementById('summaryBtn');
+    btn.textContent = '⏳ Generating...';
+    btn.disabled = true;
+
+    const res = await fetch('/doctor/generate-summary', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({patient_id: currentPatientId})
+    });
+    const data = await res.json();
+    summaryText = data.summary;
+    currentEmail = data.email;
+
+    document.getElementById('summaryContent').textContent = summaryText;
+    document.getElementById('summaryBox').style.display = 'block';
+    document.getElementById('sendBtnRow').style.display = 'flex';
+
+    if (!currentEmail) {
+        document.getElementById('emailBtn').style.display = 'none';
+        document.getElementById('noEmailMsg').style.display = 'block';
+    }
+
+    btn.textContent = '📋 Regenerate Summary';
+    btn.disabled = false;
+}
+
+async function sendEmail() {
+    const btn = document.getElementById('emailBtn');
+    btn.textContent = '⏳ Sending...';
+    btn.disabled = true;
+
+    const res = await fetch('/doctor/send-summary-email', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({patient_id: currentPatientId, summary: summaryText})
+    });
+    const data = await res.json();
+    if (data.success) {
+        document.getElementById('emailSuccess').style.display = 'block';
+        btn.textContent = '✅ Email Sent';
+    } else {
+        btn.textContent = '❌ Failed — Retry';
+        btn.disabled = false;
+        alert('Email failed: ' + data.error);
     }
 }
 
@@ -342,6 +422,104 @@ def save():
     structured_notes = data.get('structured_notes', '')
     save_notes(patient_id, raw_notes, structured_notes)
     return jsonify({"success": True})
+
+@app.route('/doctor/generate-summary', methods=['POST'])
+def generate_summary():
+    from dotenv import load_dotenv
+    import smtplib
+    load_dotenv()
+
+    data = request.json
+    patient_id = data.get('patient_id')
+    patient = get_patient(patient_id)
+
+    summary_prompt = """You are a medical communication specialist.
+Convert the doctor's clinical notes into a warm, easy-to-understand After Visit Summary for the patient.
+Use simple plain language — no medical jargon. Be warm and caring.
+Format it clearly with sections: Visit Details, What We Discussed, Diagnosis, Treatment Plan, Follow-Up Instructions, Important Reminders.
+End with a warm closing from the doctor."""
+
+    prompt = f"""Patient: {patient['first_name']} {patient['last_name']}
+Date of Birth: {patient['date_of_birth']}
+Doctor: {patient['doctor_name']}
+Visit Date: {datetime.now().strftime('%B %d, %Y')}
+
+Clinical Notes:
+{patient['structured_notes']}
+
+Please generate a warm patient-friendly After Visit Summary."""
+
+    response = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=1024,
+        system=summary_prompt,
+        messages=[{"role": "user", "content": prompt}]
+    )
+    summary = response.content[0].text
+
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("UPDATE checkins SET after_visit_summary=? WHERE id=?", (summary, patient_id))
+        conn.commit()
+
+    return jsonify({"summary": summary, "email": patient.get('email', '')})
+
+@app.route('/doctor/send-summary-email', methods=['POST'])
+def send_summary_email():
+    import smtplib
+    from email.mime.multipart import MIMEMultipart
+    from email.mime.text import MIMEText
+    from dotenv import load_dotenv
+    load_dotenv()
+
+    data = request.json
+    patient_id = data.get('patient_id')
+    summary = data.get('summary', '')
+    patient = get_patient(patient_id)
+
+    if not patient.get('email'):
+        return jsonify({"success": False, "error": "No email address on file."})
+
+    try:
+        smtp_host = os.getenv("SMTP_HOST", "sandbox.smtp.mailtrap.io")
+        smtp_port = int(os.getenv("SMTP_PORT", 2525))
+        smtp_user = os.getenv("SMTP_USER", "")
+        smtp_pass = os.getenv("SMTP_PASS", "")
+
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = f"Your After Visit Summary — {datetime.now().strftime('%B %d, %Y')}"
+        msg['From'] = "Medical Center <clinic@medicalcenter.com>"
+        msg['To'] = patient['email']
+
+        html = f"""<html><body style="font-family:Segoe UI,sans-serif;background:#f0f4f8;padding:30px;">
+        <div style="max-width:600px;margin:0 auto;background:white;border-radius:14px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+            <div style="background:linear-gradient(135deg,#1a5276,#2c7bb6);padding:28px 32px;color:white;">
+                <h1 style="margin:0;font-size:22px;">🏥 Medical Center</h1>
+                <p style="margin:6px 0 0;opacity:0.85;font-size:14px;">After Visit Summary</p>
+            </div>
+            <div style="padding:28px 32px;color:#1a3a4a;line-height:1.8;font-size:14px;">
+                <pre style="white-space:pre-wrap;font-family:Segoe UI,sans-serif;font-size:14px;">{summary}</pre>
+            </div>
+            <div style="background:#f8fbfe;padding:18px 32px;font-size:12px;color:#64748b;border-top:1px solid #e0eef5;">
+                This summary is for your personal reference. Please keep it for your records.
+            </div>
+        </div></body></html>"""
+
+        msg.attach(MIMEText(summary, 'plain'))
+        msg.attach(MIMEText(html, 'html'))
+
+        with smtplib.SMTP(smtp_host, smtp_port) as server:
+            server.starttls()
+            server.login(smtp_user, smtp_pass)
+            server.sendmail("clinic@medicalcenter.com", patient['email'], msg.as_string())
+
+        with sqlite3.connect(DB_PATH) as conn:
+            conn.execute("UPDATE checkins SET summary_sent_at=? WHERE id=?",
+                        (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), patient_id))
+            conn.commit()
+
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
 
 if __name__ == '__main__':
     print("\n Doctor Notes Agent")
