@@ -6,6 +6,8 @@ A multi-agent AI system that automates the complete patient journey in a medical
 
 ## System Architecture
 
+![System Design](screenshots/system-design-l1.svg)
+
 ```
 Patient Check-In → Nurse Room Assignment → Doctor Clinical Notes → After Visit Summary
      Agent 1              Agent 2                 Agent 3                Agent 4

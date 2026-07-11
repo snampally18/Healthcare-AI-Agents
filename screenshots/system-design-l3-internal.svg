@@ -1,0 +1,100 @@
+<svg viewBox="0 0 900 580" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI', sans-serif">
+  <title>Healthcare AI — Internal Agent Architecture</title>
+  <rect width="900" height="580" fill="#0f1f35"/>
+  <text x="450" y="34" text-anchor="middle" fill="#e2e8f0" font-size="16" font-weight="700">Level 3 — Internal Agent Architecture</text>
+  <text x="450" y="52" text-anchor="middle" fill="#64748b" font-size="11">What happens inside every agent when a request comes in</text>
+
+  <rect x="30" y="75" width="130" height="65" rx="10" fill="#1e2d40" stroke="#93c5fd" stroke-width="2"/>
+  <text x="95" y="100" text-anchor="middle" fill="#93c5fd" font-size="22">👤</text>
+  <text x="95" y="120" text-anchor="middle" fill="#e2e8f0" font-size="12" font-weight="700">User Input</text>
+  <text x="95" y="134" text-anchor="middle" fill="#64748b" font-size="10">Browser / Form</text>
+  <line x1="160" y1="107" x2="195" y2="107" stroke="#2c4a6e" stroke-width="2" marker-end="url(#arr)"/>
+
+  <rect x="195" y="75" width="130" height="65" rx="10" fill="#1e2d40" stroke="#3b82f6" stroke-width="2"/>
+  <text x="260" y="98" text-anchor="middle" fill="#60a5fa" font-size="11" font-weight="700">Flask Route</text>
+  <text x="260" y="114" text-anchor="middle" fill="#64748b" font-size="10">GET / POST</text>
+  <text x="260" y="128" text-anchor="middle" fill="#64748b" font-size="10">request.json/form</text>
+  <line x1="325" y1="107" x2="360" y2="107" stroke="#2c4a6e" stroke-width="2" marker-end="url(#arr)"/>
+
+  <rect x="360" y="75" width="130" height="65" rx="10" fill="#1e2d40" stroke="#f59e0b" stroke-width="2"/>
+  <text x="425" y="98" text-anchor="middle" fill="#fde047" font-size="11" font-weight="700">Business Logic</text>
+  <text x="425" y="114" text-anchor="middle" fill="#64748b" font-size="10">Validate input</text>
+  <text x="425" y="128" text-anchor="middle" fill="#64748b" font-size="10">Build prompt</text>
+  <line x1="490" y1="107" x2="525" y2="107" stroke="#2c4a6e" stroke-width="2" marker-end="url(#arr)"/>
+
+  <rect x="525" y="75" width="130" height="65" rx="10" fill="#1a1500" stroke="#eab308" stroke-width="2"/>
+  <text x="590" y="98" text-anchor="middle" fill="#fde047" font-size="11" font-weight="700">Claude API</text>
+  <text x="590" y="114" text-anchor="middle" fill="#64748b" font-size="10">anthropic.messages</text>
+  <text x="590" y="128" text-anchor="middle" fill="#64748b" font-size="10">.create()</text>
+  <line x1="655" y1="107" x2="690" y2="107" stroke="#2c4a6e" stroke-width="2" marker-end="url(#arr)"/>
+
+  <rect x="690" y="75" width="130" height="65" rx="10" fill="#1e2d40" stroke="#22c55e" stroke-width="2"/>
+  <text x="755" y="98" text-anchor="middle" fill="#86efac" font-size="11" font-weight="700">Parse + Save</text>
+  <text x="755" y="114" text-anchor="middle" fill="#64748b" font-size="10">Extract response</text>
+  <text x="755" y="128" text-anchor="middle" fill="#64748b" font-size="10">Write to SQLite</text>
+
+  <path d="M755,140 Q755,165 450,165 Q145,165 95,140" stroke="#2c4a6e" stroke-width="1.5" fill="none" stroke-dasharray="5,3" marker-end="url(#arrDash)"/>
+  <text x="450" y="180" text-anchor="middle" fill="#64748b" font-size="10">JSON response back to browser</text>
+
+  <text x="30" y="215" fill="#64748b" font-size="11" font-weight="700" letter-spacing="1">WHAT EACH AGENT DOES INSIDE</text>
+
+  <rect x="30" y="228" width="200" height="155" rx="10" fill="#0c2a3a" stroke="#0891b2" stroke-width="1.5"/>
+  <text x="130" y="248" text-anchor="middle" fill="#7dd3fc" font-size="12" font-weight="700">Agent 1 — Check-In</text>
+  <text x="46" y="268" fill="#94a3b8" font-size="10">① Read form fields from request</text>
+  <text x="46" y="284" fill="#94a3b8" font-size="10">② Build validation prompt for Claude</text>
+  <text x="46" y="300" fill="#94a3b8" font-size="10">③ Claude checks all required fields</text>
+  <text x="46" y="316" fill="#94a3b8" font-size="10">④ If valid → INSERT into checkins.db</text>
+  <text x="46" y="332" fill="#94a3b8" font-size="10">⑤ Return confirmation message</text>
+  <text x="46" y="348" fill="#94a3b8" font-size="10">⑥ Form resets → kiosk ready</text>
+  <text x="130" y="372" text-anchor="middle" fill="#0891b2" font-size="9">No inter-agent calls</text>
+
+  <rect x="245" y="228" width="200" height="155" rx="10" fill="#0c2a1a" stroke="#27ae60" stroke-width="1.5"/>
+  <text x="345" y="248" text-anchor="middle" fill="#86efac" font-size="12" font-weight="700">Agent 2 — Nurse</text>
+  <text x="261" y="268" fill="#94a3b8" font-size="10">① SELECT waiting patients from DB</text>
+  <text x="261" y="284" fill="#94a3b8" font-size="10">② Calc wait time from checked_in_at</text>
+  <text x="261" y="300" fill="#94a3b8" font-size="10">③ Claude suggests best room assign</text>
+  <text x="261" y="316" fill="#94a3b8" font-size="10">④ Nurse confirms → UPDATE checkins</text>
+  <text x="261" y="332" fill="#94a3b8" font-size="10">⑤ UPDATE rooms table → occupied</text>
+  <text x="261" y="348" fill="#94a3b8" font-size="10">⑥ Display page auto-refreshes</text>
+  <text x="345" y="372" text-anchor="middle" fill="#27ae60" font-size="9">Reads Agent 1 data via DB</text>
+
+  <rect x="460" y="228" width="200" height="155" rx="10" fill="#2a1a0a" stroke="#e67e22" stroke-width="1.5"/>
+  <text x="560" y="248" text-anchor="middle" fill="#fdba74" font-size="12" font-weight="700">Agent 3 — Doctor</text>
+  <text x="476" y="268" fill="#94a3b8" font-size="10">① SELECT patients in_room from DB</text>
+  <text x="476" y="284" fill="#94a3b8" font-size="10">② Doctor types rough shorthand notes</text>
+  <text x="476" y="300" fill="#94a3b8" font-size="10">③ Claude structures into clinical doc</text>
+  <text x="476" y="316" fill="#94a3b8" font-size="10">④ UPDATE structured_notes in DB</text>
+  <text x="476" y="332" fill="#94a3b8" font-size="10">⑤ Claude generates patient summary</text>
+  <text x="476" y="348" fill="#94a3b8" font-size="10">⑥ Send via Mailtrap SMTP</text>
+  <text x="560" y="372" text-anchor="middle" fill="#e67e22" font-size="9">Reads Agent 2 data via DB</text>
+
+  <rect x="675" y="228" width="200" height="155" rx="10" fill="#1a0a2a" stroke="#a855f7" stroke-width="1.5"/>
+  <text x="775" y="248" text-anchor="middle" fill="#d8b4fe" font-size="12" font-weight="700">Agent 4 — Summary</text>
+  <text x="691" y="268" fill="#94a3b8" font-size="10">① SELECT patients with saved notes</text>
+  <text x="691" y="284" fill="#94a3b8" font-size="10">② Claude writes patient-friendly text</text>
+  <text x="691" y="300" fill="#94a3b8" font-size="10">③ UPDATE after_visit_summary in DB</text>
+  <text x="691" y="316" fill="#94a3b8" font-size="10">④ Option A: Send via Mailtrap SMTP</text>
+  <text x="691" y="332" fill="#94a3b8" font-size="10">⑤ Option B: Browser print dialog</text>
+  <text x="691" y="348" fill="#94a3b8" font-size="10">⑥ UPDATE summary_sent_at in DB</text>
+  <text x="775" y="372" text-anchor="middle" fill="#a855f7" font-size="9">Reads Agent 3 data via DB</text>
+
+  <text x="30" y="408" fill="#64748b" font-size="11" font-weight="700" letter-spacing="1">DATABASE SCHEMA — checkins table</text>
+  <rect x="30" y="418" width="840" height="130" rx="10" fill="#111e30" stroke="#2c4a6e" stroke-width="1.5"/>
+  <text x="50" y="438" fill="#7dd3fc" font-size="10" font-weight="700">PATIENT INFO</text>
+  <text x="50" y="454" fill="#94a3b8" font-size="10">id · first_name · last_name · date_of_birth · phone_number · email</text>
+  <text x="50" y="474" fill="#86efac" font-size="10" font-weight="700">INSURANCE</text>
+  <text x="50" y="490" fill="#94a3b8" font-size="10">insurance_provider · member_id · group_number</text>
+  <text x="50" y="510" fill="#fdba74" font-size="10" font-weight="700">APPOINTMENT</text>
+  <text x="50" y="526" fill="#94a3b8" font-size="10">doctor_name · appointment_time · checked_in_at</text>
+  <text x="450" y="438" fill="#fde047" font-size="10" font-weight="700">ROOM / STATUS</text>
+  <text x="450" y="454" fill="#94a3b8" font-size="10">room_number · room_status (waiting → in_room → visit_done → completed)</text>
+  <text x="450" y="474" fill="#d8b4fe" font-size="10" font-weight="700">CLINICAL</text>
+  <text x="450" y="490" fill="#94a3b8" font-size="10">doctor_notes · structured_notes · visit_completed_at</text>
+  <text x="450" y="510" fill="#86efac" font-size="10" font-weight="700">SUMMARY</text>
+  <text x="450" y="526" fill="#94a3b8" font-size="10">after_visit_summary · summary_sent_at</text>
+
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#2c4a6e"/></marker>
+    <marker id="arrDash" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#2c4a6e"/></marker>
+  </defs>
+</svg>
