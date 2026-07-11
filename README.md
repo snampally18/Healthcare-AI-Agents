@@ -33,6 +33,7 @@ Patient Check-In → Nurse Room Assignment → Doctor Clinical Notes → After V
 
 ### Agent 2 — Nurse Room Assignment (`nurse_agent.py`)
 - Nurse sees all waiting patients on a Staff Panel
+- **Wait Time Tracker** — color-coded wait time per patient (green < 10 min, orange 10–19 min, red ⚠️ 20+ min)
 - Claude AI suggests the best room assignment based on appointment time and check-in time
 - Nurse assigns patients to Exam Rooms 1–5
 - Waiting Room Display auto-refreshes every 10 seconds showing patient name and room number
@@ -77,16 +78,35 @@ Patient Check-In → Nurse Room Assignment → Doctor Clinical Notes → After V
 
 ---
 
+## Additional Features
+
+### Search Patient Records
+- Search box on the records page filters by patient name, doctor, phone, or date of birth
+- Matching rows are highlighted for quick identification
+
+### Wait Time Tracker
+- Nurse panel shows how long each patient has been waiting
+- Color-coded urgency: 🟢 green (< 10 min) → 🟠 orange (10–19 min) → 🔴 red ⚠️ (20+ min)
+
+### Daily Summary Report (`/daily-report`)
+- End-of-day stats: total patients, still waiting, in room, visits completed, summaries sent
+- Average visit duration
+- Patients broken down by doctor
+- Full list of today's patients with status
+
+---
+
 ## Project URLs
 
-| URL | Agent | User |
-|-----|-------|------|
+| URL | Description | User |
+|-----|-------------|------|
 | `http://localhost:5000` | Patient Check-In Form | Patient |
-| `http://localhost:5000/records` | All Check-In Records | Staff |
-| `http://localhost:5001/nurse` | Nurse Staff Panel | Nurse |
+| `http://localhost:5000/records` | All Patient Records + Search | Staff |
+| `http://localhost:5000/daily-report` | Daily Summary Report | Staff |
+| `http://localhost:5001/nurse` | Nurse Staff Panel + Wait Time Tracker | Nurse |
 | `http://localhost:5001/display` | Waiting Room Display | Patients |
-| `http://localhost:5002/doctor` | Doctor Notes Panel | Doctor |
-| `http://localhost:5003/summary` | After Visit Summary | Doctor/Staff |
+| `http://localhost:5002/doctor` | Doctor Notes + After Visit Summary | Doctor |
+| `http://localhost:5003/summary` | After Visit Summary (standalone) | Doctor/Staff |
 
 ---
 
