@@ -1,6 +1,6 @@
 # Healthcare AI Agents 🏥
 
-A multi-agent AI system that automates the complete patient journey in a medical clinic — from check-in to after visit summary — powered by Claude AI (Anthropic).
+A multi-agent AI system that automates the complete patient journey in a medical clinic — from self check-in to after visit summary — powered by Claude AI (Anthropic). No front desk staff required.
 
 ---
 
@@ -17,10 +17,10 @@ Patient Check-In → Nurse Room Assignment → Doctor Clinical Notes → After V
 ## Agents
 
 ### Agent 1 — Patient Check-In (`checkin_app.py`)
-- Patient fills a web form with personal, insurance, and appointment details
+- Patient self-checks in at a kiosk — no front desk staff needed
 - Claude AI validates all fields and flags missing information
 - Confirmed check-ins are saved to SQLite database
-- Form auto-resets for the next patient after confirmation
+- Form auto-resets and returns to kiosk screen for the next patient
 
 **Fields collected:**
 - First Name, Last Name
@@ -96,17 +96,31 @@ Patient Check-In → Nurse Room Assignment → Doctor Clinical Notes → After V
 
 ---
 
+## Role-Based Access
+
+The dashboard at `http://localhost:5000` has 4 roles — each sees only what they need:
+
+| Role | Access |
+|------|--------|
+| 🖥️ **Patient Kiosk** | Check-in form only — returns to kiosk screen after each patient |
+| 👩‍⚕️ **Nurse** | Nurse room assignment + waiting room display |
+| 🩺 **Doctor** | Clinical notes + after visit summary |
+| 🔐 **Admin** | Full visibility — all agents, records, daily report |
+
+---
+
 ## Project URLs
 
-| URL | Description | User |
+| URL | Description | Role |
 |-----|-------------|------|
-| `http://localhost:5000` | Patient Check-In Form | Patient |
-| `http://localhost:5000/records` | All Patient Records + Search | Staff |
-| `http://localhost:5000/daily-report` | Daily Summary Report | Staff |
-| `http://localhost:5001/nurse` | Nurse Staff Panel + Wait Time Tracker | Nurse |
-| `http://localhost:5001/display` | Waiting Room Display | Patients |
-| `http://localhost:5002/doctor` | Doctor Notes + After Visit Summary | Doctor |
-| `http://localhost:5003/summary` | After Visit Summary (standalone) | Doctor/Staff |
+| `http://localhost:5000` | Role selector dashboard | All |
+| `http://localhost:5000/checkin` | Patient self check-in form | Patient Kiosk |
+| `http://localhost:5000/records` | All patient records + search | Admin |
+| `http://localhost:5000/daily-report` | Daily summary report | Admin |
+| `http://localhost:5001/nurse` | Nurse staff panel + wait time tracker | Nurse |
+| `http://localhost:5001/display` | Waiting room display | Patients |
+| `http://localhost:5002/doctor` | Doctor notes + after visit summary | Doctor |
+| `http://localhost:5003/summary` | After visit summary (standalone) | Doctor/Admin |
 
 ---
 
