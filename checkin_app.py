@@ -308,7 +308,7 @@ HTML_TEMPLATE = """
     </div>
 
     <div class="success-banner" id="successBanner">
-        ✅ Check-In Complete! Please have a seat. A staff member will be with you shortly.
+        ✅ Check-in complete! Please have a seat. The nurse will be with you shortly.
         <div style="font-size:12px; margin-top:6px; opacity:0.85;">Form will reset for the next patient in 3 seconds...</div>
     </div>
 </div>
@@ -1062,29 +1062,39 @@ def daily_report():
     <!-- Patient List -->
     <div class="section">
         <h2>👥 Today's Patients</h2>
-        {"<p class='empty'>No patients checked in today yet.</p>" if not patients else f'''
-        <table>
-            <tr>
-                <th>Name</th>
-                <th>Doctor</th>
-                <th>Appt Time</th>
-                <th>Room</th>
-                <th>Status</th>
-                <th>Checked In</th>
-            </tr>
-            {"".join([f"""
-            <tr>
-                <td><b>{p["first_name"]} {p["last_name"]}</b></td>
-                <td>{p["doctor_name"] or "-"}</td>
-                <td>{p["appointment_time"] or "-"}</td>
-                <td>{f"Room {p['room_number']}" if p["room_number"] else "-"}</td>
-                <td><span class="status" style="background:{status_colors.get(p["room_status"], "#f1f5f9; color:#64748b")}">{p["room_status"].replace("_"," ").title() if p["room_status"] else "-"}</span></td>
-                <td>{p["checked_in_at"] or "-"}</td>
-            </tr>""" for p in patients])}
-        </table>'''}
+        PATIENT_TABLE_PLACEHOLDER
     </div>
 </body>
 </html>"""
+
+    if not patients:
+        patient_table = "<p class='empty'>No patients checked in today yet.</p>"
+    else:
+        rows = ""
+        for p in patients:
+            status = p["room_status"] or ""
+            status_style = status_colors.get(status, "#f1f5f9; color:#64748b")
+            status_label = status.replace("_", " ").title() if status else "-"
+            room_display = f"Room {p['room_number']}" if p["room_number"] else "-"
+            rows += f"""
+            <tr>
+                <td><b>{p['first_name']} {p['last_name']}</b></td>
+                <td>{p['doctor_name'] or '-'}</td>
+                <td>{p['appointment_time'] or '-'}</td>
+                <td>{room_display}</td>
+                <td><span class="status" style="background:{status_style}">{status_label}</span></td>
+                <td>{p['checked_in_at'] or '-'}</td>
+            </tr>"""
+        patient_table = f"""
+        <table>
+            <tr>
+                <th>Name</th><th>Doctor</th><th>Appt Time</th>
+                <th>Room</th><th>Status</th><th>Checked In</th>
+            </tr>
+            {rows}
+        </table>"""
+
+    html = html.replace("PATIENT_TABLE_PLACEHOLDER", patient_table)
     return html
 
 if __name__ == '__main__':
