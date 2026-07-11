@@ -309,7 +309,7 @@ HTML_TEMPLATE = """
 
     <div class="success-banner" id="successBanner">
         ✅ Check-in complete! Please have a seat. The nurse will be with you shortly.
-        <div style="font-size:12px; margin-top:6px; opacity:0.85;">Form will reset for the next patient in 3 seconds...</div>
+        <div style="font-size:12px; margin-top:6px; opacity:0.85;">Returning to main screen for the next patient in 3 seconds...</div>
     </div>
 </div>
 
@@ -402,6 +402,11 @@ async function confirmDone() {
 
         // Reset conversation history
         conversationHistory = [];
+
+        // If patient came from kiosk, redirect back to main menu
+        if (localStorage.getItem('clinicRole') === 'kiosk') {
+            window.location.href = '/';
+        }
     }, 3000);
 }
 </script>
@@ -427,16 +432,17 @@ DASHBOARD_TEMPLATE = """
         /* Role selector */
         .role-screen { max-width: 700px; margin: 0 auto; }
         .role-title { text-align: center; color: white; font-size: 18px; font-weight: 600; margin-bottom: 24px; }
-        .role-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+        .role-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
         .role-card {
             background: #1e3a5f; border-radius: 14px; padding: 28px 16px;
             text-align: center; cursor: pointer; border: 2px solid #2c4a6e;
             transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
         }
         .role-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
-        .role-card.front-desk:hover { border-color: #2c7bb6; }
+        .role-card.kiosk:hover      { border-color: #0891b2; }
         .role-card.nurse:hover      { border-color: #27ae60; }
         .role-card.doctor:hover     { border-color: #e67e22; }
+        .role-card.admin:hover      { border-color: #7e22ce; }
         .role-icon { font-size: 40px; margin-bottom: 12px; }
         .role-name { font-size: 15px; font-weight: 700; color: white; margin-bottom: 6px; }
         .role-desc { font-size: 11px; color: #64748b; line-height: 1.5; }
@@ -495,17 +501,17 @@ DASHBOARD_TEMPLATE = """
 <body>
     <div class="header">
         <h1>🏥 Medical Center</h1>
-        <p>Staff Portal</p>
+        <p id="portalLabel">Select your role to continue</p>
     </div>
 
     <!-- Role Selector Screen -->
     <div class="role-screen" id="roleScreen">
         <p class="role-title">Who are you? Select your role to continue</p>
         <div class="role-grid">
-            <div class="role-card front-desk" onclick="selectRole('frontdesk')">
-                <div class="role-icon">🏥</div>
-                <div class="role-name">Front Desk</div>
-                <div class="role-desc">Patient check-in, records, all agents</div>
+            <div class="role-card kiosk" onclick="selectRole('kiosk')">
+                <div class="role-icon">🖥️</div>
+                <div class="role-name">Patient Kiosk</div>
+                <div class="role-desc">Self check-in for patients</div>
             </div>
             <div class="role-card nurse" onclick="selectRole('nurse')">
                 <div class="role-icon">👩‍⚕️</div>
@@ -517,6 +523,11 @@ DASHBOARD_TEMPLATE = """
                 <div class="role-name">Doctor</div>
                 <div class="role-desc">Clinical notes and after visit summary</div>
             </div>
+            <div class="role-card admin" onclick="selectRole('admin')">
+                <div class="role-icon">🔐</div>
+                <div class="role-name">Admin</div>
+                <div class="role-desc">Full visibility — all agents, records, reports</div>
+            </div>
         </div>
     </div>
 
@@ -527,11 +538,27 @@ DASHBOARD_TEMPLATE = """
             <span id="roleName" style="color:#93c5fd; font-size:13px; font-weight:600;"></span>
         </div>
 
-        <!-- Front Desk Cards -->
-        <div id="frontdeskDash">
+        <!-- Patient Kiosk -->
+        <div id="kioskDash" style="display:none;">
+            <div class="grid grid-1" style="max-width:500px; margin: 0 auto 20px;">
+                <a class="card card-1" href="/checkin">
+                    <div class="card-icon">🖥️</div>
+                    <div class="card-title">Patient Check-In</div>
+                    <div class="card-desc">Enter your personal, insurance, and appointment details to check in</div>
+                    <div class="stats">
+                        <span class="stat stat-blue">{{ total_today }} checked in today</span>
+                        <span class="stat stat-green">{{ waiting }} waiting</span>
+                    </div>
+                    <div class="card-link">Start Check-In →</div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Admin Cards -->
+        <div id="adminDash" style="display:none;">
             <div class="grid" style="max-width:900px; margin: 0 auto 20px;">
                 <a class="card card-1" href="/checkin">
-                    <div class="card-icon">🏥</div>
+                    <div class="card-icon">🖥️</div>
                     <div class="card-title">Patient Check-In</div>
                     <div class="card-desc">Collect patient info, insurance details and appointment data</div>
                     <div class="stats">
@@ -577,9 +604,13 @@ DASHBOARD_TEMPLATE = """
                     <div class="card-sm-title">📺 Waiting Room Display</div>
                     <div class="card-sm-desc">Live screen showing patient names and assigned rooms</div>
                 </a>
-                <a class="card-sm" href="/records" target="_blank">
+                <a class="card-sm" href="/records">
                     <div class="card-sm-title">🗄 All Patient Records</div>
-                    <div class="card-sm-desc">View all check-in records and visit history</div>
+                    <div class="card-sm-desc">Search and view all check-in records and visit history</div>
+                </a>
+                <a class="card-sm" href="/daily-report">
+                    <div class="card-sm-title">📊 Daily Report</div>
+                    <div class="card-sm-desc">Today's stats — patients, wait times, visits completed</div>
                 </a>
             </div>
         </div>
@@ -639,16 +670,20 @@ function selectRole(role) {
     document.getElementById('roleScreen').style.display = 'none';
     document.getElementById('dashboardScreen').style.display = 'block';
 
-    document.getElementById('frontdeskDash').style.display = 'none';
+    document.getElementById('kioskDash').style.display = 'none';
     document.getElementById('nurseDash').style.display = 'none';
     document.getElementById('doctorDash').style.display = 'none';
+    document.getElementById('adminDash').style.display = 'none';
 
-    const labels = { frontdesk: '🏥 Front Desk', nurse: '👩‍⚕️ Nurse', doctor: '🩺 Doctor' };
-    document.getElementById('roleName').textContent = labels[role];
+    const labels = { kiosk: '🖥️ Patient Kiosk', nurse: '👩‍⚕️ Nurse', doctor: '🩺 Doctor', admin: '🔐 Admin' };
+    const subtitles = { kiosk: 'Patient Check-In Kiosk', nurse: 'Staff Portal', doctor: 'Staff Portal', admin: 'Staff Portal — Admin View' };
+    document.getElementById('roleName').textContent = labels[role] || role;
+    document.getElementById('portalLabel').textContent = subtitles[role] || '';
 
-    if (role === 'frontdesk') document.getElementById('frontdeskDash').style.display = 'block';
-    if (role === 'nurse')     document.getElementById('nurseDash').style.display = 'block';
-    if (role === 'doctor')    document.getElementById('doctorDash').style.display = 'block';
+    if (role === 'kiosk')  document.getElementById('kioskDash').style.display = 'block';
+    if (role === 'nurse')  document.getElementById('nurseDash').style.display = 'block';
+    if (role === 'doctor') document.getElementById('doctorDash').style.display = 'block';
+    if (role === 'admin')  document.getElementById('adminDash').style.display = 'block';
 
     localStorage.setItem('clinicRole', role);
 }
@@ -657,6 +692,7 @@ function switchRole() {
     localStorage.removeItem('clinicRole');
     document.getElementById('roleScreen').style.display = 'block';
     document.getElementById('dashboardScreen').style.display = 'none';
+    document.getElementById('portalLabel').textContent = 'Select your role to continue';
 }
 
 // Remember role on refresh
