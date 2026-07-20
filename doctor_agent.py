@@ -105,6 +105,7 @@ DOCTOR_PANEL = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <title>Doctor Notes Agent</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -296,7 +297,7 @@ async function generateNotes() {
     const data = await res.json();
     structuredNotes = data.structured_notes;
 
-    document.getElementById('structuredContent').textContent = structuredNotes;
+    document.getElementById('structuredContent').innerHTML = marked.parse(structuredNotes);
     document.getElementById('structuredBox').style.display = 'block';
     document.getElementById('saveBtn').style.display = 'inline-block';
 
@@ -336,7 +337,7 @@ async function generateSummary() {
     summaryText = data.summary;
     currentEmail = data.email;
 
-    document.getElementById('summaryContent').textContent = summaryText;
+    document.getElementById('summaryContent').innerHTML = marked.parse(summaryText);
     document.getElementById('summaryBox').style.display = 'block';
     document.getElementById('sendBtnRow').style.display = 'flex';
 
