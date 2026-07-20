@@ -307,6 +307,38 @@ async function getAISuggestion() {
     const res = await fetch('/nurse/suggest', { method: 'POST' });
     const data = await res.json();
     box.textContent = data.suggestion;
+
+    // Parse PATIENT and ROOM from Claude's response and auto-select in dropdowns
+    const text = data.suggestion;
+    const patientMatch = text.match(/PATIENT:\*{0,2}\s*(.+)/i);
+    const roomMatch = text.match(/ROOM:\*{0,2}\s*(?:Room\s*)?(\d+)/i);
+
+    console.log('Patient match:', patientMatch);
+    console.log('Room match:', roomMatch);
+
+    if (patientMatch && roomMatch) {
+        const suggestedName = patientMatch[1].replace(/\*/g, '').trim().toLowerCase();
+        const suggestedRoom = roomMatch[1].trim();
+
+        console.log('Suggested name:', suggestedName, 'Room:', suggestedRoom);
+
+        document.querySelectorAll('select[id^="room_"]').forEach(select => {
+            const row = select.closest('tr');
+            const nameCell = row.querySelector('td:first-child');
+            const cellText = nameCell ? nameCell.textContent.trim().toLowerCase() : '';
+            console.log('Checking row:', cellText);
+            if (nameCell && cellText.includes(suggestedName.split(' ')[0].toLowerCase())) {
+                for (let option of select.options) {
+                    if (option.value == suggestedRoom) {
+                        select.value = option.value;
+                        select.style.border = '2px solid #27ae60';
+                        select.style.borderRadius = '6px';
+                        break;
+                    }
+                }
+            }
+        });
+    }
 }
 </script>
 </body>
